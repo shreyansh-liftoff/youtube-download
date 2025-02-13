@@ -22,7 +22,7 @@ app.post("/download", async (req: Request, res: Response): Promise<any> => {
         const outputPath = path.join("/tmp", `${videoId}.mp3`);
 
         console.log("Downloading with yt-dlp...");
-        const { stderr } = await execPromise(`/usr/bin/env yt-dlp --cookies cookies.txt --no-check-certificate -x --audio-format mp3 -o ${outputPath} ${videoUrl}`);
+        const { stderr } = await execPromise(`/usr/bin/env yt-dlp --cookies "${path.join(process.cwd(), 'cookies.txt')}" --no-check-certificate -x --audio-format mp3 -o ${outputPath} ${videoUrl}`);
 
         if (stderr) {
             console.error("Error downloading video:", stderr);
