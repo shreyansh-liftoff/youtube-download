@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer';
 
 async function loginToYouTube() {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
     
     await page.goto('https://accounts.google.com/signin/v2/identifier?service=youtube');
