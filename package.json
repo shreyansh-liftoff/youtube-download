@@ -6,19 +6,24 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "login": "node dist/login.js",
+    "dev": "tsc && npm run login && npm run start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@distube/ytdl-core": "^4.16.4",
     "@vercel/blob": "^0.27.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "node-fetch": "^2.7.0",
     "puppeteer": "^24.2.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.2",
+    "@types/node-fetch": "^2.6.12",
     "typescript": "^5.7.3"
   }
 }

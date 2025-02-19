@@ -4,6 +4,8 @@ import fs from "fs";
 import path from "path";
 import { promisify } from "util";
 import dotenv from "dotenv";
+import fetch from 'node-fetch';
+import ytdl from "@distube/ytdl-core";
 
 dotenv.config();
 
@@ -23,40 +25,27 @@ app.post("/download", async (req: Request, res: Response): Promise<any> => {
         const videoId = videoUrl.split("v=")[1]?.split("&")[0] || `audio_${Date.now()}`;
         const outputPath = path.join("/tmp", `${videoId}.mp3`);
 
-        // Download cookies from blob storage
-        const cookiesUrl = process.env.COOKIES_URL;
-        if (!cookiesUrl) {
-            return res.status(500).json({ error: "Missing COOKIES_URL in environment variables" });
-        }
-
-        const cookiesPath = path.join(process.cwd(), "cookies.txt");
-        
-        console.log("Downloading cookies...");
-        try {
-            const cookiesResponse = await fetch(cookiesUrl);
-            if (!cookiesResponse.ok) {
-                throw new Error(`Failed to fetch cookies, status: ${cookiesResponse.status}`);
-            }
-            fs.writeFileSync(cookiesPath, await cookiesResponse.text());
-        } catch (err) {
-            console.error("Error fetching cookies:", err);
-            return res.status(500).json({ error: "Failed to fetch cookies" });
-        }
-
         console.log("Downloading audio with yt-dlp...");
-        const command = `/usr/bin/env yt-dlp --cookies "${cookiesPath}" --no-check-certificate -x --audio-format mp3 -o ${outputPath} ${videoUrl}`;
-        const { stdout, stderr } = await execPromise(command);
-
-        console.log(stdout);
-        if (stderr) {
-            console.warn("yt-dlp warning:", stderr);
-        }
+        const agent = ytdl.createAgent(JSON.parse(fs.readFileSync("cookies.json", "utf-8")));
+        const stream = ytdl(videoUrl, { filter: "audioonly", quality: "highestaudio" });
+        stream.pipe(fs.createWriteStream(outputPath));
+        stream.on("error", (err) => {
+            console.error("Download error:", err);
+            return res.status(500).json({ error: "Failed to download video" });
+        });
+        stream.on("progress", (chunkLength, downloaded, total) => {
+            const percent = downloaded / total * 100;
+            console.log(`Downloaded ${percent.toFixed(2)}%`);
+        });
+        stream.on("end", () => {
+            console.log("Download complete");
+        });
 
         if (!fs.existsSync(outputPath)) {
             throw new Error("Download failed, file not found.");
         }
 
-        res.sendFile(outputPath, async (err) => {
+        return res.sendFile(outputPath, async (err) => {
             if (err) {
                 console.error("Error sending file:", err);
                 return res.status(500).json({ error: "Error sending file" });
